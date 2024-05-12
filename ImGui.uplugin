@@ -1,9 +1,9 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.22",
+	"VersionName": "1.90.2-docking",
 	"FriendlyName": "ImGui",
-	"Description": "",
+	"Description": "Dear ImGui for Unreal Engine 5",
 	"Category": "Debug",
 	"CreatedBy": "",
 	"CreatedByURL": "",
@@ -16,8 +16,11 @@
 	"Modules": [
 		{
 			"Name": "ImGui",
-			"Type": "DeveloperTool",
-			"LoadingPhase": "PreDefault"
+			"Type": "Runtime",
+			"LoadingPhase": "PostEngineInit",
+			"TargetDenyList": [
+				"Server"
+			]
 		}
 	],
 	"Plugins": [
@@ -25,5 +28,7 @@
 			"Name": "EnhancedInput",
 			"Enabled": true
 		}
-	]
+	],
+	"IsExperimentalVersion": false,
+	"EnabledByDefault":  true
 }

@@ -261,7 +261,7 @@ void FImGuiModule::ToggleShowDemo()
 // Runtime loader
 //----------------------------------------------------------------------------------------------------
 
-#if !WITH_EDITOR && RUNTIME_LOADER_ENABLED
+#if WITH_EDITOR || RUNTIME_LOADER_ENABLED
 
 class FImGuiModuleLoader
 {
@@ -305,7 +305,7 @@ FName FImGuiModuleLoader::ModuleName = "ImGui";
 // In monolithic builds this will start loading process.
 FImGuiModuleLoader FImGuiModuleLoader::Instance;
 
-#endif // !WITH_EDITOR && RUNTIME_LOADER_ENABLED
+#endif // WITH_EDITOR || RUNTIME_LOADER_ENABLED
 
 
 //----------------------------------------------------------------------------------------------------

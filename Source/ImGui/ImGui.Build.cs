@@ -24,6 +24,7 @@ public class ImGui : ModuleRules
 		bool bEnableRuntimeLoader = true;
 
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		PrecompileForTargets = PrecompileTargetsType.Any;
 
 #if UE_4_24_OR_LATER
 		bLegacyPublicIncludePaths = false;
@@ -47,12 +48,19 @@ public class ImGui : ModuleRules
 			}
 			);
 
-
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"Core",
-				"Projects"
+				"CoreUObject",
+				"Engine",
+				"Projects",
+				"InputCore",
+				"SlateCore",
+				"Slate",
+				"UMG",
+				"DeveloperSettings",
+				"AIModule"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -61,12 +69,7 @@ public class ImGui : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"CoreUObject",
 				"EnhancedInput",
-				"Engine",
-				"InputCore",
-				"Slate",
-				"SlateCore"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -74,12 +77,19 @@ public class ImGui : ModuleRules
 
 		if (bBuildEditor)
 		{
+			PublicDependencyModuleNames.AddRange(
+				new string[]
+				{
+					"UnrealEd",
+					"LevelEditor"
+				}
+				);
+
 			PrivateDependencyModuleNames.AddRange(
 				new string[]
 				{
 					"EditorStyle",
 					"Settings",
-					"UnrealEd",
 				}
 				);
 		}
@@ -97,6 +107,12 @@ public class ImGui : ModuleRules
 		List<string> PrivateDefinitions = Definitions;
 #endif
 
-		PrivateDefinitions.Add(string.Format("RUNTIME_LOADER_ENABLED={0}", bEnableRuntimeLoader ? 1 : 0));
+		PrivateDefinitions.AddRange(
+			new string[]
+			{
+				string.Format("RUNTIME_LOADER_ENABLED={0}", bEnableRuntimeLoader ? 1 : 0),
+				"IMGUI_DEFINE_MATH_OPERATORS=1",
+			}
+			);
 	}
 }
