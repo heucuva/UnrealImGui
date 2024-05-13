@@ -17,10 +17,7 @@
 		{
 			"Name": "ImGui",
 			"Type": "Runtime",
-			"LoadingPhase": "PostEngineInit",
-			"TargetDenyList": [
-				"Server"
-			]
+			"LoadingPhase": "PostEngineInit"
 		}
 	],
 	"Plugins": [

@@ -110,7 +110,7 @@ public class ImGui : ModuleRules
 		PrivateDefinitions.AddRange(
 			new string[]
 			{
-				string.Format("RUNTIME_LOADER_ENABLED={0}", bEnableRuntimeLoader ? 1 : 0),
+				string.Format("IMGUI_RUNTIME_LOADER_ENABLED={0}", bEnableRuntimeLoader ? 1 : 0),
 				"IMGUI_DEFINE_MATH_OPERATORS=1",
 			}
 			);
