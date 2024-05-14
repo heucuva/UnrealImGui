@@ -76,8 +76,10 @@ namespace
 FImGuiContextProxy::FImGuiContextProxy(const FString& InName, int32 InContextIndex, ImFontAtlas* InFontAtlas, float InDPIScale)
 	: Name(InName)
 	, ContextIndex(InContextIndex)
-	, IniFilename(TCHAR_TO_ANSI(*GetIniFile(InName)))
 {
+	auto iniFilename = StringCast<ANSICHAR>(*GetIniFile(InName));
+	IniFilename = iniFilename.Get();
+
 	// Create context.
 	Context = ImGui::CreateContext(InFontAtlas);
 

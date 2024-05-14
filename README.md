@@ -17,7 +17,7 @@ Also note that the NetImGui branch is not up to date with any of this fork's cha
 Fork Additions/Fixes
 --------------------
  - Updated core source files for Unreal Engine 5.
- - Updated Dear ImGui to 1.90.2-docking.
+ - Updated Dear ImGui to 1.87.
  - Added ImPlot v0.13 WIP.
  - `ImGui::IsKey*` now functional with all known ImGui keys.
  - Updated input handling flow to be [standard compliant](https://github.com/ocornut/imgui/issues/4921) with Dear ImGui 1.87 which makes ImGui react better at low FPS. Will add `IMGUI_DISABLE_OBSOLETE_KEYIO` preprocessor once I've ripped out old style input.
@@ -28,7 +28,7 @@ Status
 ------
 UnrealImGui Version: 1.22
 
-ImGui version: 1.90.2-docking
+ImGui version: 1.87
 
 ImPlot version: v0.13 WIP
 

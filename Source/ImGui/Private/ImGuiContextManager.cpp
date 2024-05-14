@@ -8,6 +8,7 @@
 #include "ImGuiModule.h"
 #include "Utilities/WorldContext.h"
 #include "Utilities/WorldContextIndex.h"
+#include "GenericPlatform/StandardPlatformString.h"
 
 #include <imgui.h>
 
@@ -272,7 +273,8 @@ void FImGuiContextManager::BuildFontAtlas(const TMap<FName, TSharedPtr<ImFontCon
 			// Set font name for debugging
 			if (CustomFontConfig.IsValid())
 			{
-				strcpy_s(CustomFontConfig->Name, 40, TCHAR_TO_ANSI(*CustomFontName.ToString()));
+				auto customFontName = StringCast<ANSICHAR>(*CustomFontName.ToString());
+				FPlatformString::Strncpy(CustomFontConfig->Name, customFontName.Get(), sizeof(CustomFontConfig->Name));
 			}
 		
 			FontAtlas.AddFont(CustomFontConfig.Get());
