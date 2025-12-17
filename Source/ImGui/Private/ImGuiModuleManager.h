@@ -18,11 +18,10 @@ class FImGuiModuleManager
 	friend class FImGuiModule;
 
 public:
-
 	// Get interface to module settings.
 	FImGuiModuleSettings& GetSettings() { return Settings; }
 
-	// Get interface to module state properties. 
+	// Get interface to module state properties.
 	FImGuiModuleProperties& GetProperties() { return Properties; }
 
 	// Get ImGui contexts manager.
@@ -37,7 +36,6 @@ public:
 	void RebuildFontAtlas();
 
 private:
-
 	FImGuiModuleManager();
 	~FImGuiModuleManager();
 
@@ -78,7 +76,7 @@ private:
 	// ImGui settings proxy (valid in every loading stage).
 	FImGuiModuleSettings Settings;
 
-	// Widget that we add to all created contexts to draw ImGui demo. 
+	// Widget that we add to all created contexts to draw ImGui demo.
 	FImGuiDemo ImGuiDemo;
 
 	// Manager for ImGui contexts.

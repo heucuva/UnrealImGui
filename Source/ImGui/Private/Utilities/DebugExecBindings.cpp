@@ -100,3 +100,8 @@ namespace DebugExecBindings
 		}
 	}
 }
+
+void FImGuiKeyInfo::UpdatePlayerInputs(const FImGuiKeyInfo& KeyInfo, const FString& CommandToBindTo)
+{
+	DebugExecBindings::UpdatePlayerInputs(KeyInfo, CommandToBindTo);
+}

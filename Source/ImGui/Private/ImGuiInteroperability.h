@@ -8,6 +8,7 @@
 #include <Input/Events.h>
 
 #include <imgui.h>
+#include <implot.h>
 
 
 class FImGuiInputState;

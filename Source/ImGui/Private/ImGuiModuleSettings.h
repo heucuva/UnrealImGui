@@ -18,47 +18,9 @@
 #include <UObject/SoftObjectPath.h>
 #endif
 
+#include "ImGuiKeyInfo.h"
+
 #include "ImGuiModuleSettings.generated.h"
-
-
-/**
- * Struct containing key information that can be used for key binding. Using 'Undetermined' value for modifier keys
- * means that those keys should be ignored when testing for a match.
- */
-USTRUCT()
-struct FImGuiKeyInfo
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, Category = "Input")
-	FKey Key;
-
-	UPROPERTY(EditAnywhere, Category = "Input")
-	ECheckBoxState Shift = ECheckBoxState::Undetermined;
-
-	UPROPERTY(EditAnywhere, Category = "Input")
-	ECheckBoxState Ctrl = ECheckBoxState::Undetermined;
-
-	UPROPERTY(EditAnywhere, Category = "Input")
-	ECheckBoxState Alt = ECheckBoxState::Undetermined;
-
-	UPROPERTY(EditAnywhere, Category = "Input")
-	ECheckBoxState Cmd = ECheckBoxState::Undetermined;
-
-	friend bool operator==(const FImGuiKeyInfo& Lhs, const FImGuiKeyInfo& Rhs)
-	{
-		return Lhs.Key == Rhs.Key
-			&& Lhs.Shift == Rhs.Shift
-			&& Lhs.Ctrl == Rhs.Ctrl
-			&& Lhs.Alt == Rhs.Alt
-			&& Lhs.Cmd == Rhs.Cmd;
-	}
-
-	friend bool operator!=(const FImGuiKeyInfo& Lhs, const FImGuiKeyInfo& Rhs)
-	{
-		return !(Lhs == Rhs);
-	}
-};
 
 UENUM(BlueprintType)
 enum class EImGuiCanvasSizeType : uint8
@@ -111,12 +73,12 @@ enum class EImGuiDPIScaleMethod : uint8
 /**
  * Struct with DPI scale data.
  */
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FImGuiDPIScaleInfo
 {
 	GENERATED_BODY()
 
-protected:
+public:
 
 	// Whether to scale in ImGui or in Slate. Scaling in ImGui gives better looking results but Slate might be a better
 	// option when layouts do not account for different fonts and styles. When scaling in Slate, ImGui canvas size will
@@ -210,6 +172,14 @@ protected:
 	UPROPERTY(EditAnywhere, config, Category = "Keyboard Shortcuts")
 	FImGuiKeyInfo ToggleInput;
 
+	// Define a shortcut key to 'ImGui.ToggleDisplay' command. Binding is only set if the key field is valid.
+	// Note that modifier key properties can be set to one of the three values: undetermined means that state of the given
+	// modifier is not important, checked means that it needs to be pressed and unchecked means that it cannot be pressed.
+	//
+	// This binding is using Player Input's DebugExecBindings which only works in non-shipment builds.
+	UPROPERTY(EditAnywhere, config, Category = "Keyboard Shortcuts")
+	FImGuiKeyInfo ToggleDisplay;
+
 	// Chose how to define the ImGui canvas size. Select between custom, desktop and viewport.
 	UPROPERTY(EditAnywhere, config, Category = "Canvas Size")
 	FImGuiCanvasSizeInfo CanvasSize;
@@ -221,6 +191,7 @@ protected:
 	static UImGuiSettings* DefaultInstance;
 
 	friend class FImGuiModuleSettings;
+	friend class FImGuiModule;
 };
 
 
@@ -261,6 +232,9 @@ public:
 	// Get the shortcut configuration for 'ImGui.ToggleInput' command.
 	const FImGuiKeyInfo& GetToggleInputKey() const { return ToggleInputKey; }
 
+	// Get the shortcut configuration for 'ImGui.ToggleDisplay' command.
+	const FImGuiKeyInfo& GetToggleDisplayKey() const { return ToggleDisplayKey; }
+
 	// Get the information how to calculate the canvas size.
 	const FImGuiCanvasSizeInfo& GetCanvasSizeInfo() const { return CanvasSize; }
 
@@ -291,6 +265,7 @@ private:
 	void SetShareMouseInput(bool bShare);
 	void SetUseSoftwareCursor(bool bUse);
 	void SetToggleInputKey(const FImGuiKeyInfo& KeyInfo);
+	void SetToggleDisplayKey(const FImGuiKeyInfo& KeyInfo);
 	void SetCanvasSizeInfo(const FImGuiCanvasSizeInfo& CanvasSizeInfo);
 	void SetDPIScaleInfo(const FImGuiDPIScaleInfo& ScaleInfo);
 
@@ -303,6 +278,7 @@ private:
 
 	FSoftClassPath ImGuiInputHandlerClass;
 	FImGuiKeyInfo ToggleInputKey;
+	FImGuiKeyInfo ToggleDisplayKey;
 	FImGuiCanvasSizeInfo CanvasSize;
 	FImGuiDPIScaleInfo DPIScale;
 	bool bShareKeyboardInput = false;

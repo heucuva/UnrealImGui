@@ -134,6 +134,13 @@ public:
 	// @param bIsDown - True, if Alt is down
 	void SetAltDown(bool bIsDown) { bIsAltDown = bIsDown; }
 
+	// Get Command/Super down state.
+	bool IsCommandDown() const { return bIsCommandDown; }
+
+	// Set Command/Super down state.
+	// @param bIsDown - True, if Command/Super is down
+	void SetCommandDown(bool bIsDown) { bIsCommandDown = bIsDown; }
+
 	// Get reference to the array with navigation input states.
 	const FNavInputArray& GetNavigationInputs() const { return NavigationInputs; }
 
@@ -237,6 +244,7 @@ private:
 	bool bIsControlDown = false;
 	bool bIsShiftDown = false;
 	bool bIsAltDown = false;
+	bool bIsCommandDown = false;
 
 	bool bKeyboardNavigationEnabled = false;
 	bool bGamepadNavigationEnabled = false;

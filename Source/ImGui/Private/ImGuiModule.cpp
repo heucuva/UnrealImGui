@@ -4,6 +4,7 @@
 
 #include "ImGuiDelegatesContainer.h"
 #include "ImGuiModuleManager.h"
+#include "ImGuiModuleSettings.h"
 #include "TextureManager.h"
 #include "Utilities/WorldContext.h"
 #include "Utilities/WorldContextIndex.h"
@@ -31,6 +32,29 @@ struct EDelegateCategory
 	};
 };
 
+namespace
+{
+	TAutoConsoleVariable<float> CVarDPIScale(TEXT("ImGui.DPIScale"),
+	                                         0.0f,
+	                                         TEXT("Updates the ImGui DPI scaling factor. '0.0' means to use the INI defaults."),
+	                                         FConsoleVariableDelegate::CreateLambda([](IConsoleVariable* Var)
+											 {
+												 if (FMath::IsNearlyEqual(Var->GetFloat(), 0.0f, 0.001f))
+												 {
+													FImGuiModule::Get().RestoreDPIScaleToDefaults();
+												 }
+												 else
+												 {
+													FImGuiDPIScaleInfo scaleInfo = FImGuiModule::Get().GetDPIScale();
+													scaleInfo.ScalingMethod = EImGuiDPIScaleMethod::ImGui;
+													scaleInfo.Scale = Var->GetFloat();
+													scaleInfo.bScaleWithCurve = false;
+													FImGuiModule::Get().SetDPIScale(scaleInfo);
+												}
+											 }),
+	                                         ECVF_Cheat);
+} // namespace
+
 FImGuiModuleManager* ImGuiModuleManager = nullptr;
 
 #if WITH_EDITOR
@@ -42,26 +66,27 @@ static FImGuiEditor* ImGuiEditor = nullptr;
 #if WITH_EDITOR
 FImGuiDelegateHandle FImGuiModule::AddEditorImGuiDelegate(const FImGuiDelegate& Delegate)
 {
-	return { FImGuiDelegatesContainer::Get().OnWorldDebug(Utilities::EDITOR_CONTEXT_INDEX).Add(Delegate),
-		EDelegateCategory::Default, Utilities::EDITOR_CONTEXT_INDEX };
+	return {FImGuiDelegatesContainer::Get().OnWorldDebug(Utilities::EDITOR_CONTEXT_INDEX).Add(Delegate),
+	        EDelegateCategory::Default,
+	        Utilities::EDITOR_CONTEXT_INDEX};
 }
 #endif
 
 FImGuiDelegateHandle FImGuiModule::AddWorldImGuiDelegate(const FImGuiDelegate& Delegate)
 {
 	const int32 ContextIndex = Utilities::GetWorldContextIndex((UWorld*)GWorld);
-	return { FImGuiDelegatesContainer::Get().OnWorldDebug(ContextIndex).Add(Delegate), EDelegateCategory::Default, ContextIndex };
+	return {FImGuiDelegatesContainer::Get().OnWorldDebug(ContextIndex).Add(Delegate), EDelegateCategory::Default, ContextIndex};
 }
 
 FImGuiDelegateHandle FImGuiModule::AddWorldImGuiDelegate(const UWorld* World, const FImGuiDelegate& Delegate)
 {
 	const int32 ContextIndex = Utilities::GetWorldContextIndex(World);
-	return { FImGuiDelegatesContainer::Get().OnWorldDebug(ContextIndex).Add(Delegate), EDelegateCategory::Default, ContextIndex };
+	return {FImGuiDelegatesContainer::Get().OnWorldDebug(ContextIndex).Add(Delegate), EDelegateCategory::Default, ContextIndex};
 }
 
 FImGuiDelegateHandle FImGuiModule::AddMultiContextImGuiDelegate(const FImGuiDelegate& Delegate)
 {
-	return { FImGuiDelegatesContainer::Get().OnMultiContextDebug().Add(Delegate), EDelegateCategory::MultiContext };
+	return {FImGuiDelegatesContainer::Get().OnMultiContextDebug().Add(Delegate), EDelegateCategory::MultiContext};
 }
 
 void FImGuiModule::RemoveImGuiDelegate(const FImGuiDelegateHandle& Handle)
@@ -81,7 +106,7 @@ void FImGuiModule::RemoveImGuiDelegate(const FImGuiDelegateHandle& Handle)
 FImGuiTextureHandle FImGuiModule::FindTextureHandle(const FName& Name)
 {
 	const TextureIndex Index = ImGuiModuleManager->GetTextureManager().FindTextureIndex(Name);
-	return (Index != INDEX_NONE) ? FImGuiTextureHandle{ Name, ImGuiInterops::ToImTextureID(Index) } : FImGuiTextureHandle{};
+	return (Index != INDEX_NONE) ? FImGuiTextureHandle{Name, ImGuiInterops::ToImTextureID(Index)} : FImGuiTextureHandle{};
 }
 
 FImGuiTextureHandle FImGuiModule::RegisterTexture(const FName& Name, class UTexture* Texture, bool bMakeUnique)
@@ -89,11 +114,12 @@ FImGuiTextureHandle FImGuiModule::RegisterTexture(const FName& Name, class UText
 	FTextureManager& TextureManager = ImGuiModuleManager->GetTextureManager();
 
 	checkf(!bMakeUnique || TextureManager.FindTextureIndex(Name) == INDEX_NONE,
-		TEXT("Trying to register a texture with a name '%s' that is already used. Chose a different name ")
-		TEXT("or use bMakeUnique false, to update existing texture resources."), *Name.ToString());
+	       TEXT("Trying to register a texture with a name '%s' that is already used. Chose a different name ")
+	           TEXT("or use bMakeUnique false, to update existing texture resources."),
+	       *Name.ToString());
 
 	const TextureIndex Index = TextureManager.CreateTextureResources(Name, Texture);
-	return FImGuiTextureHandle{ Name, ImGuiInterops::ToImTextureID(Index) };
+	return FImGuiTextureHandle{Name, ImGuiInterops::ToImTextureID(Index)};
 }
 
 void FImGuiModule::ReleaseTexture(const FImGuiTextureHandle& Handle)
@@ -167,33 +193,34 @@ void FImGuiModule::ShutdownModule()
 	// When shutting down during hot-reloading, we might want to rewire handles used in statically bound functions
 	// or move data to a new module.
 
-	FModuleManager::Get().OnModulesChanged().AddLambda([this] (FName Name, EModuleChangeReason Reason)
-	{
-		if (Reason == EModuleChangeReason::ModuleLoaded && Name == "ImGui")
+	FModuleManager::Get().OnModulesChanged().AddLambda(
+		[this](FName Name, EModuleChangeReason Reason)
 		{
-			FImGuiModule& LoadedModule = FImGuiModule::Get();
-			if (&LoadedModule != this)
+			if (Reason == EModuleChangeReason::ModuleLoaded && Name == "ImGui")
 			{
-				// Statically bound functions can be bound to the obsolete module, so we need to manually redirect.
-
-				if (LoadedModule.ImGuiContextHandle)
+				FImGuiModule& LoadedModule = FImGuiModule::Get();
+				if (&LoadedModule != this)
 				{
-					ImGuiImplementation::SetParentContextHandle(*LoadedModule.ImGuiContextHandle);
-				}
+					// Statically bound functions can be bound to the obsolete module, so we need to manually redirect.
 
-				if (LoadedModule.DelegatesContainerHandle)
-				{
-					FImGuiDelegatesContainer::MoveContainer(*LoadedModule.DelegatesContainerHandle);
-				}
+					if (LoadedModule.ImGuiContextHandle)
+					{
+						ImGuiImplementation::SetParentContextHandle(*LoadedModule.ImGuiContextHandle);
+					}
 
-				if (bMoveProperties)
-				{
-					bMoveProperties = false;
-					LoadedModule.SetProperties(PropertiesToMove);
+					if (LoadedModule.DelegatesContainerHandle)
+					{
+						FImGuiDelegatesContainer::MoveContainer(*LoadedModule.DelegatesContainerHandle);
+					}
+
+					if (bMoveProperties)
+					{
+						bMoveProperties = false;
+						LoadedModule.SetProperties(PropertiesToMove);
+					}
 				}
 			}
-		}
-	});
+		});
 #endif // WITH_EDITOR
 }
 
@@ -212,6 +239,32 @@ FImGuiModuleProperties& FImGuiModule::GetProperties()
 const FImGuiModuleProperties& FImGuiModule::GetProperties() const
 {
 	return ImGuiModuleManager->GetProperties();
+}
+
+void FImGuiModule::SetDPIScale(const FImGuiDPIScaleInfo& ScaleInfo)
+{
+	ImGuiModuleManager->GetContextManager().SetDPIScale(ScaleInfo);
+}
+
+void FImGuiModule::RestoreDPIScaleToDefaults()
+{
+	UImGuiSettings* SettingsObject = UImGuiSettings::Get();
+	SettingsObject->LoadConfig(SettingsObject->GetClass(), *SettingsObject->GetDefaultConfigFilename());
+	FImGuiDPIScaleInfo newScale = SettingsObject->DPIScale;
+#if WITH_EDITOR
+	// There is a weird quirk in the editor where because we are evaluating this later during execution the display
+	// resolution reported is a actually much larger and so scaling by the curve (2x) does not match the scale at editor startup (1x).
+	if (newScale.ScalingMethod == EImGuiDPIScaleMethod::ImGui)
+	{
+		newScale.bScaleWithCurve = false;
+	}
+#endif
+	SetDPIScale(newScale);
+}
+
+const FImGuiDPIScaleInfo& FImGuiModule::GetDPIScale() const
+{
+	return ImGuiModuleManager->GetContextManager().GetDPIScale();
 }
 
 bool FImGuiModule::IsInputMode() const
@@ -261,7 +314,7 @@ void FImGuiModule::ToggleShowDemo()
 // Runtime loader
 //----------------------------------------------------------------------------------------------------
 
-#if !WITH_EDITOR && RUNTIME_LOADER_ENABLED
+#if !WITH_EDITOR && IMGUI_RUNTIME_LOADER_ENABLED
 
 class FImGuiModuleLoader
 {
@@ -277,10 +330,7 @@ class FImGuiModuleLoader
 	static FORCEINLINE bool IsValid(const TSharedPtr<IModuleInterface>& Ptr) { return Ptr.IsValid(); }
 	static FORCEINLINE bool IsValid(const IModuleInterface* const Ptr) { return Ptr != nullptr; }
 
-	bool Load()
-	{
-		return IsValid(FModuleManager::Get().LoadModule(ModuleName));
-	}
+	bool Load() { return IsValid(FModuleManager::Get().LoadModule(ModuleName)); }
 
 	void LoadAndRelease(FName Name, EModuleChangeReason Reason)
 	{
@@ -305,7 +355,7 @@ FName FImGuiModuleLoader::ModuleName = "ImGui";
 // In monolithic builds this will start loading process.
 FImGuiModuleLoader FImGuiModuleLoader::Instance;
 
-#endif // !WITH_EDITOR && RUNTIME_LOADER_ENABLED
+#endif // !WITH_EDITOR && IMGUI_RUNTIME_LOADER_ENABLED
 
 
 //----------------------------------------------------------------------------------------------------

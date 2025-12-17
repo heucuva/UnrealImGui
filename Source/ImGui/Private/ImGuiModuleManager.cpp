@@ -141,18 +141,19 @@ void FImGuiModuleManager::CreateTickInitializer()
 	{
 		// Try to register tick delegate until we finally succeed.
 
-		TickInitializerHandle = FModuleManager::Get().OnModulesChanged().AddLambda([this](FName Name, EModuleChangeReason Reason)
-		{
-			if (Reason == EModuleChangeReason::ModuleLoaded)
+		TickInitializerHandle = FModuleManager::Get().OnModulesChanged().AddLambda(
+			[this](FName Name, EModuleChangeReason Reason)
 			{
-				RegisterTick();
-			}
+				if (Reason == EModuleChangeReason::ModuleLoaded)
+				{
+					RegisterTick();
+				}
 
-			if (IsTickRegistered())
-			{
-				ReleaseTickInitializer();
-			}
-		});
+				if (IsTickRegistered())
+				{
+					ReleaseTickInitializer();
+				}
+			});
 	}
 }
 
