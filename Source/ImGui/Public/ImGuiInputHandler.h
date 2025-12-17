@@ -17,6 +17,9 @@ struct FAnalogInputEvent;
 struct FCharacterEvent;
 struct FKeyEvent;
 
+class ULocalPlayer;
+class SWidget;
+
 #if WITH_EDITOR
 class FUICommandInfo;
 #endif // WITH_EDITOR
@@ -32,7 +35,6 @@ class IMGUI_API UImGuiInputHandler : public UObject
 	GENERATED_BODY()
 
 public:
-
 	/**
 	 * Called to handle character events.
 	 * @returns Response whether the event was handled
@@ -114,6 +116,12 @@ public:
 	 */
 	virtual FReply OnTouchEnded(const FVector2D& TouchPosition, const FPointerEvent& TouchEvent);
 
+	/** Called to handle when focus is taken by the ImGui widget. */
+	virtual void OnTakeFocus(TSharedRef<SWidget> FocusWidget, ULocalPlayer* LocalPlayer);
+
+	/** Called to handle when focus should be return from the ImGui widget. */
+	virtual void OnReturnFocus(TSharedPtr<SWidget> WidgetToRestore, ULocalPlayer* LocalPlayer);
+
 	/** Called to handle activation of the keyboard input. */
 	virtual void OnKeyboardInputEnabled();
 
@@ -133,7 +141,6 @@ public:
 	virtual void OnMouseInputDisabled();
 
 protected:
-
 	/** Copy state of modifier keys to input state. */
 	void CopyModifierKeys(const FInputEvent& InputEvent);
 
@@ -167,7 +174,6 @@ protected:
 	bool HasImGuiActiveItem() const;
 
 private:
-
 	void UpdateInputStatePointer();
 
 	void OnSoftwareCursorChanged(bool);

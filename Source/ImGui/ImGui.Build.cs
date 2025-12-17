@@ -1,6 +1,5 @@
 // Distributed under the MIT License (MIT) (see accompanying LICENSE file)
 
-using System.Collections.Generic;
 using System.IO;
 using UnrealBuildTool;
 
@@ -28,13 +27,18 @@ public class ImGui : ModuleRules
 
 #if UE_4_24_OR_LATER
 		bLegacyPublicIncludePaths = false;
-		ShadowVariableWarningLevel = WarningLevel.Error;
 		bTreatAsEngineModule = true;
-#endif
+#	if UE_5_6_OR_LATER
+		CppCompileWarningSettings.PluginModuleUnsupportedWarningLevel = WarningLevel.Error;
+#	else // UE_5_6_OR_LATER
+		ShadowVariableWarningLevel = WarningLevel.Error;
+#	endif // UE_5_6_OR_LATER
+#endif // UE_4_24_OR_LATER
 
 		PublicIncludePaths.AddRange(
 			new string[] {
 				Path.Combine(ModuleDirectory, "../ThirdParty/ImGuiLibrary/Include"),
+				Path.Combine(ModuleDirectory, "../ThirdParty/ImPlotLibrary/Include"),
 				// ... add public include paths required here ...
 			}
 			);
@@ -44,6 +48,7 @@ public class ImGui : ModuleRules
 			new string[] {
 				"ImGui/Private",
 				"ThirdParty/ImGuiLibrary/Private",
+				"ThirdParty/ImPlotLibrary/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -70,6 +75,7 @@ public class ImGui : ModuleRules
 			new string[]
 			{
 				"EnhancedInput",
+				"ApplicationCore",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

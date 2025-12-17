@@ -8,8 +8,14 @@
 #include "Utilities/Arrays.h"
 #include "VersionCompatibility.h"
 
+#if !UE_SERVER
+#include <Framework/Application/SlateApplication.h>
+#endif // !UE_SERVER
+#include <HAL/PlatformApplicationMisc.h>
 #include <GenericPlatform/GenericPlatformFile.h>
 #include <Misc/Paths.h>
+#include <Misc/Char.h>
+#include <string>
 
 
 static constexpr float DEFAULT_CANVAS_WIDTH = 3840.f;
@@ -18,6 +24,63 @@ static constexpr float DEFAULT_CANVAS_HEIGHT = 2160.f;
 
 namespace
 {
+	static std::string GImGuiClipboardAnsi;
+	static FString GImGuiClipboardFallback;
+
+	const char* ImGuiGetClipboardText(void*)
+	{
+		FString ClipboardText;
+
+#if !UE_SERVER
+		if (FSlateApplication::IsInitialized())
+		{
+			FPlatformApplicationMisc::ClipboardPaste(ClipboardText);
+
+			if (ClipboardText.IsEmpty()
+				&& !GImGuiClipboardFallback.IsEmpty())
+			{
+				ClipboardText = GImGuiClipboardFallback;
+			}
+		}
+		else
+		{
+			ClipboardText = GImGuiClipboardFallback;
+		}
+#else // !UE_SERVER
+		ClipboardText = GImGuiClipboardFallback;
+#endif // !UE_SERVER
+
+		const auto AnsiText = StringCast<ANSICHAR>(*ClipboardText);
+		GImGuiClipboardAnsi = AnsiText.Get();
+		return GImGuiClipboardAnsi.c_str();
+	}
+
+	void ImGuiSetClipboardText(void*, const char* Text)
+	{
+		if (!Text)
+		{
+#if !UE_SERVER
+			if (FSlateApplication::IsInitialized())
+			{
+				FPlatformApplicationMisc::ClipboardCopy(TEXT(""));
+			}
+#endif // !UE_SERVER
+			GImGuiClipboardFallback.Reset();
+			return;
+		}
+
+		const FString ClipboardText = FString(UTF8_TO_TCHAR(Text));
+
+#if !UE_SERVER
+		if (FSlateApplication::IsInitialized())
+		{
+			FPlatformApplicationMisc::ClipboardCopy(*ClipboardText);
+		}
+#endif // !UE_SERVER
+
+		GImGuiClipboardFallback = ClipboardText;
+	}
+
 	FString GetSaveDirectory()
 	{
 #if ENGINE_COMPATIBILITY_LEGACY_SAVED_DIR
@@ -82,12 +145,16 @@ FImGuiContextProxy::FImGuiContextProxy(const FString& InName, int32 InContextInd
 
 	// Create context.
 	Context = ImGui::CreateContext(InFontAtlas);
+	ImPlot::CreateContext();
 
 	// Set this context in ImGui for initialization (any allocations will be tracked in this context).
 	SetAsCurrent();
 
 	// Start initialization.
 	ImGuiIO& IO = ImGui::GetIO();
+	IO.GetClipboardTextFn = ImGuiGetClipboardText;
+	IO.SetClipboardTextFn = ImGuiSetClipboardText;
+	IO.ClipboardUserData = nullptr;
 
 	// Set session data storage.
 	IO.IniFilename = IniFilename.c_str();
@@ -115,7 +182,14 @@ FImGuiContextProxy::~FImGuiContextProxy()
 		// version), even though we can pass it to the destroy function.
 		SetAsCurrent();
 
+		// Ensure frame has ended
+		EndFrame();
+
+		// Manually save data session.
+		ImGui::SaveIniSettingsToDisk(IniFilename.c_str());
+
 		// Save context data and destroy.
+		ImPlot::DestroyContext();
 		ImGui::DestroyContext(Context);
 	}
 }
@@ -242,7 +316,11 @@ void FImGuiContextProxy::UpdateDrawData(ImDrawData* DrawData)
 {
 	if (DrawData && DrawData->CmdListsCount > 0)
 	{
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
+		DrawLists.SetNum(DrawData->CmdListsCount, EAllowShrinking::No);
+#else
 		DrawLists.SetNum(DrawData->CmdListsCount, false);
+#endif
 
 		for (int Index = 0; Index < DrawData->CmdListsCount; Index++)
 		{

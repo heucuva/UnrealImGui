@@ -77,6 +77,16 @@ namespace
 		using std::begin;
 		copy(begin(Src), begin(Src) + Count, begin(Dst));
 	}
+
+	struct FModifierStateCache
+	{
+		bool bCtrl = false;
+		bool bShift = false;
+		bool bAlt = false;
+		bool bSuper = false;
+	};
+
+	static TMap<const ImGuiIO*, FModifierStateCache> ModifierStateCache;
 }
 
 namespace ImGuiInterops
@@ -110,7 +120,16 @@ namespace ImGuiInterops
 		UnrealToImGuiKeyMap.Add(EKeys::BackSpace, ImGuiKey_Backspace);
 		UnrealToImGuiKeyMap.Add(EKeys::SpaceBar,  ImGuiKey_Space);
 		UnrealToImGuiKeyMap.Add(EKeys::Enter,     ImGuiKey_Enter);
-		UnrealToImGuiKeyMap.Add(EKeys::Escape,     ImGuiKey_Escape);
+		UnrealToImGuiKeyMap.Add(EKeys::Escape,    ImGuiKey_Escape);
+
+		UnrealToImGuiKeyMap.Add(EKeys::LeftControl, ImGuiKey_LeftCtrl);
+		UnrealToImGuiKeyMap.Add(EKeys::RightControl, ImGuiKey_RightCtrl);
+		UnrealToImGuiKeyMap.Add(EKeys::LeftShift, ImGuiKey_LeftShift);
+		UnrealToImGuiKeyMap.Add(EKeys::RightShift, ImGuiKey_RightShift);
+		UnrealToImGuiKeyMap.Add(EKeys::LeftAlt, ImGuiKey_LeftAlt);
+		UnrealToImGuiKeyMap.Add(EKeys::RightAlt, ImGuiKey_RightAlt);
+		UnrealToImGuiKeyMap.Add(EKeys::LeftCommand, ImGuiKey_LeftSuper);
+		UnrealToImGuiKeyMap.Add(EKeys::RightCommand, ImGuiKey_RightSuper);
 		
 		UnrealToImGuiKeyMap.Add(EKeys::A, ImGuiKey_A);
 		UnrealToImGuiKeyMap.Add(EKeys::B, ImGuiKey_B);
@@ -364,7 +383,33 @@ namespace ImGuiInterops
 		IO.KeyCtrl = InputState.IsControlDown();
 		IO.KeyShift = InputState.IsShiftDown();
 		IO.KeyAlt = InputState.IsAltDown();
-		IO.KeySuper = false;
+		IO.KeySuper = InputState.IsCommandDown();
+
+		FModifierStateCache& Modifiers = ModifierStateCache.FindOrAdd(&IO);
+
+		if (Modifiers.bCtrl != IO.KeyCtrl)
+		{
+			IO.AddKeyEvent(ImGuiMod_Ctrl, IO.KeyCtrl);
+			Modifiers.bCtrl = IO.KeyCtrl;
+		}
+
+		if (Modifiers.bShift != IO.KeyShift)
+		{
+			IO.AddKeyEvent(ImGuiMod_Shift, IO.KeyShift);
+			Modifiers.bShift = IO.KeyShift;
+		}
+
+		if (Modifiers.bAlt != IO.KeyAlt)
+		{
+			IO.AddKeyEvent(ImGuiMod_Alt, IO.KeyAlt);
+			Modifiers.bAlt = IO.KeyAlt;
+		}
+
+		if (Modifiers.bSuper != IO.KeySuper)
+		{
+			IO.AddKeyEvent(ImGuiMod_Super, IO.KeySuper);
+			Modifiers.bSuper = IO.KeySuper;
+		}
 
 		// Copy buffers.
 		if (!InputState.GetKeysUpdateRange().IsEmpty())

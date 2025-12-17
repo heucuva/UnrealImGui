@@ -21,6 +21,7 @@
 #include <GameFramework/GameUserSettings.h>
 #include <SlateOptMacros.h>
 #include <Widgets/SViewport.h>
+#include "UnrealClient.h"
 
 #include <utility>
 
@@ -382,40 +383,53 @@ ULocalPlayer* SImGuiWidget::GetLocalPlayer() const
 void SImGuiWidget::TakeFocus()
 {
 	auto& SlateApplication = FSlateApplication::Get();
-
 	PreviousUserFocusedWidget = SlateApplication.GetUserFocusedWidget(SlateApplication.GetUserIndexForKeyboard());
 
-	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+	if (InputHandler.IsValid())
 	{
-		TSharedRef<SWidget> FocusWidget = SharedThis(this);
-		LocalPlayer->GetSlateOperations().CaptureMouse(FocusWidget);
-		LocalPlayer->GetSlateOperations().SetUserFocus(FocusWidget);
+		InputHandler->OnTakeFocus(SharedThis(this), GetLocalPlayer());
 	}
 	else
 	{
-		SlateApplication.SetKeyboardFocus(SharedThis(this));
+		if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+		{
+			TSharedRef<SWidget> FocusWidget = SharedThis(this);
+			LocalPlayer->GetSlateOperations().CaptureMouse(FocusWidget);
+			LocalPlayer->GetSlateOperations().SetUserFocus(FocusWidget);
+		}
+		else
+		{
+			SlateApplication.SetKeyboardFocus(SharedThis(this));
+		}
 	}
 }
 
 void SImGuiWidget::ReturnFocus()
 {
-	if (HasKeyboardFocus())
+	if (IsDirectlyHovered())
 	{
 		auto FocusWidgetPtr = PreviousUserFocusedWidget.IsValid()
 			? PreviousUserFocusedWidget.Pin()
 			: GameViewport->GetGameViewportWidget();
 
-		if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+		if (InputHandler.IsValid())
 		{
-			auto FocusWidgetRef = FocusWidgetPtr.ToSharedRef();
-			LocalPlayer->GetSlateOperations().CaptureMouse(FocusWidgetRef);
-			LocalPlayer->GetSlateOperations().SetUserFocus(FocusWidgetRef);
+			InputHandler->OnReturnFocus(FocusWidgetPtr, GetLocalPlayer());
 		}
 		else
 		{
-			auto& SlateApplication = FSlateApplication::Get();
-			SlateApplication.ResetToDefaultPointerInputSettings();
-			SlateApplication.SetUserFocus(SlateApplication.GetUserIndexForKeyboard(), FocusWidgetPtr);
+			if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+			{
+				auto FocusWidgetRef = FocusWidgetPtr.ToSharedRef();
+				LocalPlayer->GetSlateOperations().CaptureMouse(FocusWidgetRef);
+				LocalPlayer->GetSlateOperations().SetUserFocus(FocusWidgetRef);
+			}
+			else
+			{
+				auto& SlateApplication = FSlateApplication::Get();
+				SlateApplication.ResetToDefaultPointerInputSettings();
+				SlateApplication.SetUserFocus(SlateApplication.GetUserIndexForKeyboard(), FocusWidgetPtr);
+			}
 		}
 	}
 
@@ -585,9 +599,7 @@ void SImGuiWidget::UpdateCanvasSize()
 			CanvasSize = MinCanvasSize;
 			if (bAdaptiveCanvasSize && GameViewport.IsValid())
 			{
-				FVector2D ViewportSize;
-				GameViewport->GetViewportSize(ViewportSize);
-				CanvasSize = MaxVector(CanvasSize, ViewportSize);
+				GameViewport->GetViewportSize(CanvasSize);
 			}
 			else
 			{

@@ -10,6 +10,7 @@
 #include "VersionCompatibility.h"
 
 #include <Engine/Console.h>
+#include <Engine/LocalPlayer.h>
 #include <Framework/Application/SlateApplication.h>
 #include <GameFramework/InputSettings.h>
 #include <InputCoreTypes.h>
@@ -30,7 +31,7 @@ namespace
 	{
 		return bConsume ? FReply::Handled() : FReply::Unhandled();
 	}
-}
+} // namespace
 
 FReply UImGuiInputHandler::OnKeyChar(const struct FCharacterEvent& CharacterEvent)
 {
@@ -88,7 +89,7 @@ FReply UImGuiInputHandler::OnKeyDown(const FKeyEvent& KeyEvent)
 FReply UImGuiInputHandler::OnKeyUp(const FKeyEvent& KeyEvent)
 {
 	InputState->KeyUpEvents.Add(KeyEvent.GetKeyCode(), KeyEvent);
-	
+
 	if (KeyEvent.GetKey().IsGamepadKey())
 	{
 		bool bConsume = false;
@@ -135,7 +136,7 @@ FReply UImGuiInputHandler::OnMouseButtonDown(const FPointerEvent& MouseEvent)
 		FImGuiContextProxy* Proxy = ModuleManager->GetContextManager().GetContextProxy(0);
 		if (Proxy)
 		{
-			//GEngine->AddOnScreenDebugMessage(15, 10, Proxy->WantsMouseCapture() ? FColor::Green : FColor::Red, TEXT("Handler Down"));
+			// GEngine->AddOnScreenDebugMessage(15, 10, Proxy->WantsMouseCapture() ? FColor::Green : FColor::Red, TEXT("Handler Down"));
 			return ToReply(Proxy->WantsMouseCapture());
 		}
 	}
@@ -200,6 +201,40 @@ FReply UImGuiInputHandler::OnTouchEnded(const FVector2D& CursorPosition, const F
 	return ToReply(true);
 }
 
+void UImGuiInputHandler::OnTakeFocus(TSharedRef<SWidget> FocusWidget, ULocalPlayer* LocalPlayer)
+{
+	auto& SlateApplication = FSlateApplication::Get();
+	
+	if (IsValid(LocalPlayer))
+	{
+		LocalPlayer->GetSlateOperations().CaptureMouse(FocusWidget);
+		LocalPlayer->GetSlateOperations().SetUserFocus(FocusWidget);
+	}
+	else
+	{
+		SlateApplication.SetKeyboardFocus(FocusWidget);
+	}
+}
+
+void UImGuiInputHandler::OnReturnFocus(TSharedPtr<SWidget> WidgetToRestore, ULocalPlayer* LocalPlayer)
+{
+	if (IsValid(LocalPlayer))
+	{
+		if (WidgetToRestore.IsValid())
+		{
+			auto FocusWidgetRef = WidgetToRestore.ToSharedRef();
+			LocalPlayer->GetSlateOperations().CaptureMouse(FocusWidgetRef);
+			LocalPlayer->GetSlateOperations().SetUserFocus(FocusWidgetRef);
+		}
+	}
+	else
+	{
+		auto& SlateApplication = FSlateApplication::Get();
+		SlateApplication.ResetToDefaultPointerInputSettings();
+		SlateApplication.SetUserFocus(SlateApplication.GetUserIndexForKeyboard(), WidgetToRestore);
+	}
+}
+
 void UImGuiInputHandler::OnKeyboardInputEnabled()
 {
 	bKeyboardInputEnabled = true;
@@ -252,6 +287,7 @@ void UImGuiInputHandler::CopyModifierKeys(const FInputEvent& InputEvent)
 	InputState->SetControlDown(InputEvent.IsControlDown());
 	InputState->SetShiftDown(InputEvent.IsShiftDown());
 	InputState->SetAltDown(InputEvent.IsAltDown());
+	InputState->SetCommandDown(InputEvent.IsCommandDown());
 }
 
 bool UImGuiInputHandler::IsConsoleEvent(const FKeyEvent& KeyEvent) const
@@ -266,7 +302,8 @@ bool UImGuiInputHandler::IsStopPlaySessionEvent(const FKeyEvent& KeyEvent) const
 {
 	if (StopPlaySessionCommandInfo.IsValid())
 	{
-		const FInputChord InputChord(KeyEvent.GetKey(), KeyEvent.IsShiftDown(), KeyEvent.IsControlDown(), KeyEvent.IsAltDown(), KeyEvent.IsCommandDown());
+		const FInputChord InputChord(
+			KeyEvent.GetKey(), KeyEvent.IsShiftDown(), KeyEvent.IsControlDown(), KeyEvent.IsAltDown(), KeyEvent.IsCommandDown());
 #if ENGINE_COMPATIBILITY_SINGLE_KEY_BINDING
 		const bool bHasActiveChord = (InputChord == StopPlaySessionCommandInfo->GetActiveChord().Get());
 #else
@@ -288,13 +325,11 @@ namespace
 
 	bool IsMatchingEvent(const FKeyEvent& KeyEvent, const FImGuiKeyInfo& KeyInfo)
 	{
-		return (KeyInfo.Key == KeyEvent.GetKey())
-			&& IsMatching(KeyInfo.Shift, KeyEvent.IsShiftDown())
-			&& IsMatching(KeyInfo.Ctrl, KeyEvent.IsControlDown())
-			&& IsMatching(KeyInfo.Alt, KeyEvent.IsAltDown())
-			&& IsMatching(KeyInfo.Cmd, KeyEvent.IsCommandDown());
+		return (KeyInfo.Key == KeyEvent.GetKey()) && IsMatching(KeyInfo.Shift, KeyEvent.IsShiftDown()) &&
+		       IsMatching(KeyInfo.Ctrl, KeyEvent.IsControlDown()) && IsMatching(KeyInfo.Alt, KeyEvent.IsAltDown()) &&
+		       IsMatching(KeyInfo.Cmd, KeyEvent.IsCommandDown());
 	}
-}
+} // namespace
 
 bool UImGuiInputHandler::IsToggleInputEvent(const FKeyEvent& KeyEvent) const
 {
@@ -352,8 +387,10 @@ void UImGuiInputHandler::Initialize(FImGuiModuleManager* InModuleManager, UGameV
 	StopPlaySessionCommandInfo = FInputBindingManager::Get().FindCommandInContext("PlayWorld", "StopPlaySession");
 	if (!StopPlaySessionCommandInfo.IsValid())
 	{
-		UE_LOG(LogImGuiInputHandler, Warning, TEXT("Couldn't find 'StopPlaySession' in context 'PlayWorld'. ")
-			TEXT("PIE feature allowing execution of stop command in ImGui input mode will be disabled."));
+		UE_LOG(LogImGuiInputHandler,
+		       Warning,
+		       TEXT("Couldn't find 'StopPlaySession' in context 'PlayWorld'. ")
+		           TEXT("PIE feature allowing execution of stop command in ImGui input mode will be disabled."));
 	}
 #endif // WITH_EDITOR
 }
@@ -369,4 +406,3 @@ void UImGuiInputHandler::BeginDestroy()
 		ModuleManager->GetSettings().OnUseSoftwareCursorChanged.RemoveAll(this);
 	}
 }
-

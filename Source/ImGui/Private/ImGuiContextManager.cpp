@@ -233,6 +233,11 @@ FImGuiContextManager::FContextData& FImGuiContextManager::GetWorldContextData(co
 	return *Data;
 }
 
+const FImGuiDPIScaleInfo& FImGuiContextManager::GetDPIScale() const
+{
+	return Settings.GetDPIScaleInfo();
+}
+
 void FImGuiContextManager::SetDPIScale(const FImGuiDPIScaleInfo& ScaleInfo)
 {
 	const float Scale = ScaleInfo.GetImGuiScale();

@@ -27,9 +27,7 @@ class SImGuiWidget : public SCompoundWidget
 	typedef SCompoundWidget Super;
 
 public:
-
-	SLATE_BEGIN_ARGS(SImGuiWidget)
-	{}
+	SLATE_BEGIN_ARGS(SImGuiWidget) {}
 	SLATE_ARGUMENT(FImGuiModuleManager*, ModuleManager)
 	SLATE_ARGUMENT(UGameViewportClient*, GameViewport)
 	SLATE_ARGUMENT(int32, ContextIndex)
@@ -83,7 +81,6 @@ public:
 	virtual FReply OnTouchEnded(const FGeometry& MyGeometry, const FPointerEvent& TouchEvent) override;
 
 private:
-
 	void CreateInputHandler(const FSoftClassPath& HandlerClassReference);
 	void ReleaseInputHandler();
 
@@ -120,7 +117,13 @@ private:
 
 	FVector2D TransformScreenPointToImGui(const FGeometry& MyGeometry, const FVector2D& Point) const;
 
-	virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyClippingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& WidgetStyle, bool bParentEnabled) const override;
+	virtual int32 OnPaint(const FPaintArgs& Args,
+	                      const FGeometry& AllottedGeometry,
+	                      const FSlateRect& MyClippingRect,
+	                      FSlateWindowElementList& OutDrawElements,
+	                      int32 LayerId,
+	                      const FWidgetStyle& WidgetStyle,
+	                      bool bParentEnabled) const override;
 
 	virtual FVector2D ComputeDesiredSize(float) const override;
 

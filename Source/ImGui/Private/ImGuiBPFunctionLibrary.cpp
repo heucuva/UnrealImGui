@@ -2,6 +2,7 @@
 
 #include "ImGuiBPFunctionLibrary.h"
 #include "ImGuiModule.h"
+#include "ImGuiModuleSettings.h"
 
 #include <imgui.h>
 #include "Misc/Optional.h"
@@ -9,6 +10,11 @@
 // Context creation and access
 
 // ==== Main ====
+
+void UImGuiBPFunctionLibrary::SetDPIScale(const FImGuiDPIScaleInfo& ScaleInfo)
+{
+	FImGuiModule::Get().SetDPIScale(ScaleInfo);
+}
 
 void UImGuiBPFunctionLibrary::SetShowingImgui(bool Showing)
 {

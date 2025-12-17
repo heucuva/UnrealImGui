@@ -8,6 +8,7 @@
 
 
 class UTexture2D;
+class UTexture;
 
 // Index type to be used as a texture handle.
 using TextureIndex = int32;

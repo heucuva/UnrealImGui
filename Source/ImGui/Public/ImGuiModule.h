@@ -129,6 +129,22 @@ public:
 	virtual const FImGuiModuleProperties& GetProperties() const;
 
 	/**
+	 * Get current DPI Scaling settings for ImGui
+	 */
+	virtual const struct FImGuiDPIScaleInfo& GetDPIScale() const;
+
+
+	/**
+	 * Set DPI Scaling settings for ImGui
+	 */
+	virtual void SetDPIScale(const struct FImGuiDPIScaleInfo& ScaleInfo);
+
+	/** 
+	 * Restores the DPI Scaling settings for ImGui to those in the game settings INI
+	 */
+	virtual void RestoreDPIScaleToDefaults();
+
+	/**
 	 * DEPRECIATED: Please use GetProperties() as this function is scheduled for removal.
 	 * Check whether Input Mode is enabled (tests ImGui.InputEnabled console variable).
 	 *

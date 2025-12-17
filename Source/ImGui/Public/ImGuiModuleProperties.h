@@ -4,6 +4,8 @@
 
 struct ImFontConfig;
 
+DECLARE_MULTICAST_DELEGATE(FOnImGuiDisplayToggled);
+
 /** Properties that define state of the ImGui module. */
 class IMGUI_API FImGuiModuleProperties
 {
@@ -80,6 +82,9 @@ public:
 
 	/** Gets the map of registered custom fonts */
 	TMap<FName, TSharedPtr<ImFontConfig>>& GetCustomFonts() { return CustomFonts; }
+
+	/** Delegate called when the display is toggled for ImGui */
+	FOnImGuiDisplayToggled OnDisplayToggled;
 
 private:
 

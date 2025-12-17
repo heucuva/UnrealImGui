@@ -22,6 +22,9 @@ public:
 	// ==== Main ====
 
 	UFUNCTION(BlueprintCallable, Category = "Imgui|HUD", BlueprintCosmetic)
+		static void SetDPIScale(const struct FImGuiDPIScaleInfo& ScaleInfo);
+
+	UFUNCTION(BlueprintCallable, Category = "Imgui|HUD", BlueprintCosmetic)
 		static void SetShowingImgui(bool Showing);
 
 	UFUNCTION(BlueprintCallable, Category = "Imgui|HUD", BlueprintCosmetic)

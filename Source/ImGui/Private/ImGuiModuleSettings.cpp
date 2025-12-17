@@ -9,6 +9,8 @@
 #include <GameFramework/GameUserSettings.h>
 #include <Misc/ConfigCacheIni.h>
 
+#include "GenericPlatform/GenericApplication.h"
+#include "Framework/Application/SlateApplication.h"
 
 //====================================================================================================
 // FImGuiDPIScaleInfo
@@ -116,6 +118,7 @@ void FImGuiModuleSettings::UpdateSettings()
 		SetShareMouseInput(SettingsObject->bShareMouseInput);
 		SetUseSoftwareCursor(SettingsObject->bUseSoftwareCursor);
 		SetToggleInputKey(SettingsObject->ToggleInput);
+		SetToggleDisplayKey(SettingsObject->ToggleDisplay);
 		SetCanvasSizeInfo(SettingsObject->CanvasSize);
 	}
 }
@@ -179,6 +182,15 @@ void FImGuiModuleSettings::SetToggleInputKey(const FImGuiKeyInfo& KeyInfo)
 	{
 		ToggleInputKey = KeyInfo;
 		Commands.SetKeyBinding(FImGuiModuleCommands::ToggleInput, ToggleInputKey);
+	}
+}
+
+void FImGuiModuleSettings::SetToggleDisplayKey(const FImGuiKeyInfo& KeyInfo)
+{
+	if (ToggleDisplayKey != KeyInfo)
+	{
+		ToggleDisplayKey = KeyInfo;
+		Commands.SetKeyBinding(FImGuiModuleCommands::ToggleDisplay, ToggleDisplayKey);
 	}
 }
 

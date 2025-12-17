@@ -58,6 +58,12 @@ public:
 		return Data ? Data->ContextProxy.Get() : nullptr;
 	}
 
+	// Get current DPI scale settings.
+	const FImGuiDPIScaleInfo& GetDPIScale() const;
+
+	// Set DPI scale settings.
+	void SetDPIScale(const FImGuiDPIScaleInfo& ScaleInfo);
+
 	// Delegate called when a new context proxy is created.
 	FContextProxyCreatedDelegate OnContextProxyCreated;
 
@@ -103,7 +109,6 @@ private:
 
 	FContextData& GetWorldContextData(const UWorld& World, int32* OutContextIndex = nullptr);
 
-	void SetDPIScale(const FImGuiDPIScaleInfo& ScaleInfo);
 	void BuildFontAtlas(const TMap<FName, TSharedPtr<ImFontConfig>>& CustomFontConfigs = {});
 
 	TMap<int32, FContextData> Contexts;

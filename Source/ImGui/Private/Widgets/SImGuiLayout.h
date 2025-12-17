@@ -17,9 +17,7 @@ class SImGuiLayout : public SCompoundWidget
 	typedef SCompoundWidget Super;
 
 public:
-
-	SLATE_BEGIN_ARGS(SImGuiLayout)
-	{}
+	SLATE_BEGIN_ARGS(SImGuiLayout) {}
 	SLATE_ARGUMENT(FImGuiModuleManager*, ModuleManager)
 	SLATE_ARGUMENT(UGameViewportClient*, GameViewport)
 	SLATE_ARGUMENT(int32, ContextIndex)
@@ -32,7 +30,6 @@ public:
 	const TWeakObjectPtr<UGameViewportClient>& GetGameViewport() const { return GameViewport; }
 
 private:
-
 	float GetDPIScale() const { return DPIScale; }
 	void SetDPIScale(const FImGuiDPIScaleInfo& ScaleInfo);
 
